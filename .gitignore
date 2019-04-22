@@ -11,3 +11,20 @@
 *.lai
 *.la
 *.a
+
+# Misc Stuff
+*.dblite
+*.pyc
+cache
+*.log
+*.config
+*.creator
+*.creator.user
+*.files
+*.includes
+jackmix/jackmix
+*.moc
+libgui/slider_test
+libcontrol/controlsender_test
+libgui/channelselector_test
+libgui/midicontrolchannelassigner_test
