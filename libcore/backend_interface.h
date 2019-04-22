@@ -29,7 +29,7 @@
 
 #include "guiserver_interface.h"
 
-#define NUM_INTERPOLATION_STEPS 1024
+#define INTERPOLATION_SECONDS 0.005
 
 class QDomElement;
 class QDomDocument;
@@ -55,7 +55,6 @@ Q_OBJECT
 		 * @brief Return the current list of input channels.
 		 */
 		virtual const QStringList &inchannels() const =0;
-
 		/**
 		 * @brief Set the volume of the named node.
 		 */
@@ -158,6 +157,7 @@ Q_OBJECT
 		void testSlot(JackMix::BackendInterface::levels_t);
 	protected:
 		GuiServer_Interface* gui;
+		unsigned int num_steps;
 		/**
 		 * @brief State of a fader (including interpolation)
 		 * 
@@ -169,14 +169,14 @@ Q_OBJECT
 		 */
 		struct FaderState {
 
+			BackendInterface *bi;
 			float target;  /**< The target setting of the fader */
 			float current; /**< The current setting of the fader,
 				            changing troughout interpolation */
-			unsigned int num_steps;
 			unsigned int cur_step;
-			FaderState(float initial=0, unsigned int _num_steps=NUM_INTERPOLATION_STEPS)
-				: target {initial}, current{initial}
-				, num_steps{_num_steps}, cur_step {0}
+			FaderState(BackendInterface *_bi=nullptr, float initial=0)
+				: bi{_bi}, target {initial}, current{initial}
+				,  cur_step {0}
 			{ }
 
 			/**
@@ -186,7 +186,7 @@ Q_OBJECT
 			FaderState& operator=(float volume) {
 				if (!qFuzzyCompare(current, target))
 					// Time to change current in case we're not finished interpolating
-					current += cur_step*(target - current)/num_steps;
+					current += cur_step*(target - current)/bi->num_steps;
 				target = volume;
 				cur_step = 0;
 				
@@ -220,10 +220,10 @@ Q_OBJECT
 
 			if ( !qFuzzyCompare(fs.target, fs.current)) {
 				for (size_t n {0}; n < nframes; n++) {
-					buf[n] *= fs.current + fs.cur_step*(fs.target - fs.current)/fs.num_steps;
+					buf[n] *= fs.current + fs.cur_step*(fs.target - fs.current)/num_steps;
 					max = qMax(max, buf[n]);
 					fs.cur_step++;
-					if (fs.cur_step == fs.num_steps) {
+					if (fs.cur_step == num_steps) {
 						fs.current = fs.target;
 						fs.cur_step = 0;
 					}
@@ -264,9 +264,9 @@ Q_OBJECT
 			
 			if ( !qFuzzyCompare(fs.target, fs.current)) {
 				for (size_t n {0}; n < nframes; n++) {
-					outbuf[n] += inbuf[n]*(fs.current + fs.cur_step*(fs.target - fs.current)/fs.num_steps);
+					outbuf[n] += inbuf[n]*(fs.current + fs.cur_step*(fs.target - fs.current)/num_steps);
 					fs.cur_step++;
-					if (fs.cur_step == fs.num_steps) {
+					if (fs.cur_step == num_steps) {
 						fs.current = fs.target;
 						fs.cur_step = 0;
 					}

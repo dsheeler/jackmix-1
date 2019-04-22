@@ -83,6 +83,8 @@ private:
 	bool rename(portsmap &map, QStringList &lst, const QString old_name, const char *new_name);
 	
 public:
+	/// gets the sample rate
+	unsigned int getSampleRate();
 	/// sets the volume of channel,output
 	void setVolume( QString,QString,float );
 	/// returns the volume of channel,output
